@@ -1,4 +1,4 @@
 *.tif
 *.enp
 *.ovr
-/.tmp.drivedownload/
+# /.tmp.drivedownload/
