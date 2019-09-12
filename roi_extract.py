@@ -89,7 +89,7 @@ def extract_roi(image_path, xml_file_path, save_dir):
             masked_tran = list(img_tran)
             masked_tran[0] = geo_x
             masked_tran[3] = geo_y
-            save_tiff(masked, mask_rows, mask_cols, raster_num, masked_tran, img_proj, save_name)
+            save_tiff(save_name, masked, mask_rows, mask_cols, raster_num, masked_tran, img_proj)
     del data_set
     print('\nMission completed!')
 
@@ -228,7 +228,7 @@ def mask_roi(image_path, mask_path, save_dir):
         masked_tran = list(img_tran)
         masked_tran[0] = geo_x
         masked_tran[3] = geo_y
-        save_tiff(masked, mask_rows, mask_cols, raster_num, masked_tran, img_proj, save_name)
+        save_tiff(save_name, masked, mask_rows, mask_cols, raster_num, masked_tran, img_proj)
     area_path = os.path.join(save_dir, 'area.json')
     with open(area_path, 'w') as a_f:
         json.dump(area_dict, a_f)
@@ -285,7 +285,7 @@ def clip_with_centroids(image_path, save_dir, centroids_dict, shape):
         roi_tran[0], roi_tran[3] = transform.imagexy2geo(data_set, row_min, col_min)
 
         save_name = os.path.join(save_dir, '%s.tif' % plg_name)
-        save_tiff(roi_arr, roi_arr.shape[1], roi_arr.shape[2], raster_num, roi_tran, img_proj, save_name)
+        save_tiff(save_name, roi_arr, roi_arr.shape[1], roi_arr.shape[2], raster_num, roi_tran, img_proj)
     del data_set
     print('\nMission completed!')
 
