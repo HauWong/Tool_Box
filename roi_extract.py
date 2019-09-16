@@ -146,7 +146,7 @@ def mask_roi(image_path, mask_path, save_dir):
 
     """ 从tif格式的掩膜文件中提取roi
 
-    可实现从包含多个ROI的.xml文件中自动提取所有ROI的所有区域，
+    可实现从包含多个ROI的.tif文件中自动提取所有ROI的所有区域，
     并将每块影像保存至.tif文件中, ROI多边形dict保存至.json文件中
     保存每个块的面积保存至area.json中
 
@@ -455,6 +455,49 @@ def transform_geo_to_ctype(data_set, regions_dict, with_projcs, ctype='lonlat'):
             cur_region.append(plg)
         res[region_name] = cur_region
     return res
+
+
+def clip(image_path, save_path, x_size, y_size, offset_x=0, offset_y=0):
+
+    """
+    裁剪影像至指定大小
+
+    Args:
+        image_path: 原始影像路径
+                    str
+        save_path: 结果保存路径
+                   str
+        x_size: 行大小
+                int
+        y_size: 列大小
+                int
+        offset_x: 行偏移量，默认为0
+                  int
+        offset_y: 列偏移量，默认为0
+                  int
+    """
+
+    gdal.AllRegister()
+    print('Reading raw image ...')
+    data_set = gdal.Open(image_path)
+    if data_set is None:
+        raise FileNotFoundError('File %s Not found' % image_path)
+    img_tran = data_set.GetGeoTransform()
+    img_proj = data_set.GetProjection()
+    img_data = data_set.ReadAsArray()
+    raster_num, img_rows, img_cols = img_data.shape
+
+    if offset_x+x_size > img_rows:
+        end_x = img_rows
+    else:
+        end_x = offset_x+x_size
+    if offset_y+y_size > img_cols:
+        end_y = img_cols
+    else:
+        end_y = offset_y+y_size
+
+    res_data = img_data[:, offset_x:end_x, offset_y:end_y]
+    save_tiff(save_path, res_data, end_x-offset_x, end_y-offset_y, raster_num, geotran_info=img_tran, proj_info=img_proj)
 
 
 def array2vector(array):
