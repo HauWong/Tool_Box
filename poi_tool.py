@@ -7,7 +7,7 @@ import xlrd
 import numpy as np
 from scipy.interpolate import griddata
 
-import py_files.transform as transform
+import transform as transform
 
 
 def read(filename, total=False):
