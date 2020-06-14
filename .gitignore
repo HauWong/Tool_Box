@@ -1,6 +1,7 @@
 *.tif
 *.enp
 *.ovr
-/.tmp.drivedownload/
-/.idea/
-/.idea/workspace.xml
+*.pyc
+.tmp.drivedownload/
+.idea/
+__pycache__/
