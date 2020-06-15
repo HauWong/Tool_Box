@@ -250,3 +250,57 @@ def count_percent(arr, value):
     value_arr = np.extract(cond, arr)
     percent = float(value_arr.size)/float(arr.size)
     return percent
+
+
+def convert_grid(dataset, poi_dict, box_boundary, types):
+
+    """
+    Convert poi locations in target box into a grid-format
+    :param dataset: gdal dataset, must have geo-proj
+    :param poi_dict: dict, dictionary of pois
+    :param box_boundary: tuple, boundary of target box
+    :param types: list, classes list of pois above
+    :return: array result
+    """
+
+    channel_num = len(poi_dict)
+    if len(types) != channel_num:
+        print('Warning: Types number unmatch.')
+
+    h = box_boundary[2] - box_boundary[0]
+    w = box_boundary[3] - box_boundary[1]
+    res_shape = (h, w, len(types))
+    res = np.zeros(res_shape, dtype=np.int8)
+    for i in range(len(types)):
+        if types[i] not in poi_dict.keys():
+            print('Warning: "Type" %s not found.' % types[i])
+            continue
+        poi_list = coord_to_grid(dataset, poi_dict[types[i]])
+        print(poi_list.min())
+        print(poi_list.max())
+        for poi in poi_list:
+            row, col = poi
+            if row >= box_boundary[0] and \
+               row < box_boundary[2] and \
+               col >= box_boundary[1] and \
+               col < box_boundary[3]:
+                res[row, col, i] += 1
+    return res
+
+
+if __name__=='__main__':
+
+    '''--------------生成栅格文件----------------'''
+
+    img_path = r'D:\Documents\Study\Python\Self_Supervision\data\shijiazhuang\regular\00002.tif'
+    poi_path = r'D:\Documents\Study\Python\Self_Supervision\data\shijiazhuang\regular_pois\00002\total.xlsx'
+    type_ls = ['administrative', 'amusement', 'educational', 'market', 'residential', 'service', 'medical']
+    type_ls = ['%s_00' % t for t in type_ls]
+
+    from osgeo import gdal
+    gdal.AllRegister()
+    ds = gdal.Open(img_path)
+    _, poi_d = read(poi_path, True)
+    print(poi_d.keys())
+    poi_grid = convert_grid(ds, poi_d, [0, 0, 227, 227], type_ls)
+    print(poi_grid.shape)

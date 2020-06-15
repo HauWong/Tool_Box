@@ -2,6 +2,7 @@
 *.enp
 *.ovr
 *.pyc
+*.png
 .tmp.drivedownload/
 .idea/
 __pycache__/
