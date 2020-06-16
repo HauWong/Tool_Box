@@ -6,3 +6,4 @@
 .tmp.drivedownload/
 .idea/
 __pycache__/
+test.py

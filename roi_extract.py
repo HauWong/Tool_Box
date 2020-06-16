@@ -94,6 +94,74 @@ def extract_roi(image_path, xml_file_path, save_dir):
     print('\nMission completed!')
 
 
+def extract_roi_box(image_path, xml_file_path, save_dir):
+
+    """ ROI最小外接矩形提取
+
+    可实现从包含多个ROI的.xml文件中自动提取所有ROI的所有区域的最小外接矩形，并保存至.tif文件中
+
+    Args:
+        image_path: 带有地理信息的原始影像文件路径
+                  str
+        xml_file_path: 带含多个ROI且具有与img_path文件相同地理参考信息的.xml文件路径
+                       str
+        save_dir: 保存文件目录
+                   str
+    Returns:
+        res: 外接矩形列表
+    """
+    gdal.AllRegister()
+    print('Reading raw image ...')
+    data_set = gdal.Open(image_path)
+    if data_set is None:
+        raise FileNotFoundError('File %s Not found' % image_path)
+    img_tran = data_set.GetGeoTransform()
+    img_proj = data_set.GetProjection()
+    img_data = data_set.ReadAsArray()
+    raster_num, img_rows, img_cols = img_data.shape
+
+    print('Reading .xml file ...')
+    if xml_file_path[-4:] != '.xml':
+        raise TypeError('Unrecognizable type: \'%s\'' % xml_file_path[-4:])
+    xml_proj, regions_dict = extract_xml_info(xml_file_path)
+    print('Image Projection: %s' % img_proj)
+    print('ROI Projection: %s' % xml_proj)
+    if 'PROJCS' in xml_proj:
+        with_projcs = True
+    else:
+        with_projcs = False
+    roi_dict = transform_geo_to_ctype(data_set, regions_dict, ctype='grid', with_projcs=with_projcs)
+
+    res = []
+    for region_name in roi_dict.keys():
+        plg_list = roi_dict[region_name]
+        i = 0
+        for plg in plg_list:
+            i += 1
+            print('\rProcessing \"%s\" %04d ...' % (region_name, i), end='')
+            plg_points = np.array(plg[:-1], dtype='int32')
+            rect = limit_boundary(get_extent(plg_points), (0, img_rows, 0, img_cols))
+            res.append(rect)
+
+            box_img = img_data[:, rect[0]:rect[1], rect[2]:rect[3]].copy()
+
+            directory = os.path.join(save_dir, region_name)
+            folder = os.path.exists(directory)
+            if not folder:
+                os.makedirs(directory)
+            save_name = os.path.join(directory, '%04d.tif' % i)
+
+            geo_x, geo_y = transform.imagexy2geo(data_set, rect[0], rect[2])
+            masked_tran = list(img_tran)
+            masked_tran[0] = geo_x
+            masked_tran[3] = geo_y
+            save_tiff(save_name, box_img, rect[1]-rect[0], rect[3]-rect[2], raster_num, masked_tran, img_proj)
+
+    del data_set
+    print('\nMission completed!')
+    return res
+
+
 def extract_lonlat_str(image_path, xml_file_path, save_path):
 
     """ ROI角点坐标字符串提取
@@ -532,6 +600,29 @@ def array2vector(array):
                     corners.append([i, j])
     plg = gch.calculate_convex_hull(corners)
     return plg
+
+
+def paint_rectangles(image, box_ls, color=(255, 0, 0), width=2):
+
+    """
+    在图像上批量绘制矩形框
+
+    Args：
+        image: array, 图像数组, shape=(w, h, c)
+        box_ls: list, 矩形框列表, [(row_min, row_max, col_min, col_max), ...]
+        color: tuple, 8-bit RGB形式的框体颜色
+        width: int, 框线宽度
+    Returns：
+        image: array, 结果图像
+    """
+    img_w, img_h, _ = image.shape
+    boundary = (0, img_h, 0, img_w)
+    for box in box_ls:
+        box = limit_boundary(box, boundary)
+        first_point = (box[2], box[0])
+        last_point = (box[3], box[1])
+        cv2.rectangle(image, first_point, last_point, color, width)
+    return image
 
 
 if __name__ == '__main__':
