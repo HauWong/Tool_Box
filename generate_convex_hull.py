@@ -37,6 +37,17 @@ def is_anticlockwise(sta_point, mid_point, end_point):
 
 
 def calculate_convex_hull(points):
+    """
+    根据提供二值图像的角点坐标提取凸包
+
+    Args:
+        points: 待提取凸包二值图像的角点列表，
+                list([row1, col1], [row2, col2], ...)
+    Returns:
+         res: 凸包角点列表
+              list([row1, row2], ...)
+    """
+
     lowest_point = find_lowest(points)
     points.remove(lowest_point)
     ctan_ls = []

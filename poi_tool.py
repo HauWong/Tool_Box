@@ -96,7 +96,7 @@ def grid_to_coord(dataset, location_array):
     return res_arr
 
 
-def cell_statistic(poi_array, region_rect, cell_size=1):
+def cell_count(poi_array, region_rect, cell_size=1):
 
     """ 单元统计
 
@@ -119,7 +119,7 @@ def cell_statistic(poi_array, region_rect, cell_size=1):
     return res_arr
 
 
-def box_statistic(poi_array, box_size, step, img_arr):
+def box_count(poi_array, box_size, step, img_arr=None):
 
     """ 带步长的块统计
 
@@ -135,7 +135,7 @@ def box_statistic(poi_array, box_size, step, img_arr):
     for i in range(0, region_rect[0], step):
         for j in range(0, region_rect[1], step):
             if i+box_size <= region_rect[0] and j+box_size <= region_rect[1]:
-                if count_percent(img_arr[i:i+box_size, j:j+box_size], 0) > 0.8:
+                if img_arr is not None and count_percent(img_arr[i:i+box_size, j:j+box_size], 0) > 0.8:
                     continue
                 cur_box = poi_array[i:i+box_size, j:j+box_size].copy()
                 r_idx = int(i/step)
@@ -255,7 +255,7 @@ def count_percent(arr, value):
 def convert_grid(dataset, poi_dict, box_boundary, types):
 
     """
-    Convert poi locations in target box into a grid-format
+    Convert location of pois in target box into a grid-format
     :param dataset: gdal dataset, must have geo-proj
     :param poi_dict: dict, dictionary of pois
     :param box_boundary: tuple, boundary of target box

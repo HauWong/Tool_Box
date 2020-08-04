@@ -342,6 +342,38 @@ def save_tiff(save_path, img_data, rows, cols, raster_num, geotran_info=None, pr
     del data_set
 
 
+def generate_topic_map(topic_dict, topic_num, size):
+
+    """
+    生成LDA主题分布栅格图
+
+    Args:
+        topic_dict: 主题分布字典
+                    dict{"1": {"box": [0, 0, 256, 256],
+                               "poi_sta": [3, 1, ...],
+                               "label": [0, 0.07755155861377716, ...]},
+                        ...}
+        topic_num: 主题数量
+        size: 栅格图大小
+    Returns:
+        res: 结果栅格数组
+             array
+    """
+
+    shp = (size[0], size[1], topic_num)
+    res = np.zeros(shp, dtype=np.float16)
+    for k, v in topic_dict.items():
+        box = v['box']
+        topics = v['label']
+        box_size = (box[2]-box[0], box[3]-box[1])
+        dist_arr = np.array(topics).reshape(1, 1, topic_num)
+        dist_arr = np.repeat(np.repeat(dist_arr, box_size[0], axis=0), box_size[1], axis=1)
+        cur_org_arr = res[box[0]:box[2], box[1]:box[3], :]
+        cur_org_arr = window_padding(dist_arr, cur_org_arr, 'max')
+
+    return res
+
+
 def flip(image_data, flip_code):
     if image_data.dtype is not np.uint8:
         image_data = bit.convert_to_uint8(image_data)
@@ -357,6 +389,27 @@ def rotate(image_data, angle):
         mat = cv2.getRotationMatrix2D((cols/2, rows/2), angle, 1)
         res[i] = cv2.warpAffine(image_data[i], mat, (cols, rows))
     return res
+
+
+def window_padding(new_arr, org_arr, method='max'):
+
+    """ 窗口填充 """
+
+    if new_arr.shape != org_arr.shape:
+        raise IndexError('Wrong size.')
+
+    res_arr = org_arr
+    if method=='max':
+        res_arr[new_arr>org_arr] = new_arr[new_arr>org_arr]
+    elif method == 'min':
+        res_arr[new_arr<org_arr] = new_arr[new_arr<org_arr]
+    elif method == 'mean':
+        res_arr += new_arr
+        res_arr /= 2
+    else:
+        raise ValueError('Wrong method.')
+
+    return res_arr
 
 
 if __name__ == '__main__':

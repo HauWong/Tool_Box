@@ -358,7 +358,7 @@ def clip_with_centroids(image_path, save_dir, centroids_dict, shape):
     print('\nMission completed!')
 
 
-def clip_with_sliding_window(image_path, save_dir, shape, step):
+def clip_with_sliding_window(image_path, save_dir, shape, step, save_img=True):
 
     """ 以滑动窗口截取ROI
 
@@ -373,6 +373,8 @@ def clip_with_sliding_window(image_path, save_dir, shape, step):
                tuple(height, width)
         step: 步长
               int
+        save_img: 保存图像
+                  bool
     """
 
     gdal.AllRegister()
@@ -387,7 +389,9 @@ def clip_with_sliding_window(image_path, save_dir, shape, step):
     img_data = data_set.ReadAsArray()
     rect_dict = {}
     raster_num, img_rows, img_cols = img_data.shape
-    total_num = int((img_rows-shape[0])/step+1)*int((img_cols-shape[1])/step+1)
+    box_rows = int((img_rows-shape[0])/step+1)
+    box_cols = int((img_cols-shape[1])/step+1)
+    total_num = box_rows*box_cols
     roi_idx = 1
     for i in range(0, img_rows, step):
         for j in range(0, img_cols, step):
@@ -405,8 +409,10 @@ def clip_with_sliding_window(image_path, save_dir, shape, step):
 
             roi_tran = list(img_tran)
             roi_tran[0], roi_tran[3] = geo_x_nw, geo_y_nw
-            save_name = os.path.join(save_dir, '%05d.tif' % roi_idx)
-            # save_tiff(save_name, roi_arr, shape[0], shape[1], raster_num, roi_tran, img_proj)
+            if save_img:
+                save_name = os.path.join(save_dir, '%03d%03d_%06d.tif' %
+                                         (roi_idx/box_cols, roi_idx%box_cols, roi_idx))
+                save_tiff(save_name, roi_arr, shape[0], shape[1], raster_num, roi_tran, img_proj)
             roi_idx += 1
     del data_set
     rect_save_name = os.path.join(save_dir, 'rect_dict_%d_%d.json' % (shape[0], step))
