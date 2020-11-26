@@ -252,7 +252,7 @@ def count_percent(arr, value):
     return percent
 
 
-def convert_grid(dataset, poi_dict, box_boundary, types):
+def convert_grid(dataset, poi_dict, box_boundary, types, weight):
 
     """
     Convert location of pois in target box into a grid-format
@@ -260,31 +260,28 @@ def convert_grid(dataset, poi_dict, box_boundary, types):
     :param poi_dict: dict, dictionary of pois
     :param box_boundary: tuple, boundary of target box
     :param types: list, classes list of pois above
+    :param weight: dict, weights of all types of poi
     :return: array result
     """
-
-    channel_num = len(poi_dict)
-    if len(types) != channel_num:
-        print('Warning: Types number unmatch.')
 
     h = box_boundary[2] - box_boundary[0]
     w = box_boundary[3] - box_boundary[1]
     res_shape = (h, w, len(types))
     res = np.zeros(res_shape, dtype=np.int8)
     for i in range(len(types)):
-        if types[i] not in poi_dict.keys():
-            print('Warning: "Type" %s not found.' % types[i])
-            continue
-        poi_list = coord_to_grid(dataset, poi_dict[types[i]])
-        print(poi_list.min())
-        print(poi_list.max())
-        for poi in poi_list:
-            row, col = poi
-            if row >= box_boundary[0] and \
-               row < box_boundary[2] and \
-               col >= box_boundary[1] and \
-               col < box_boundary[3]:
-                res[row, col, i] += 1
+        for sub_type, w in weight[types[i]].items():
+            if sub_type not in poi_dict.keys():
+                print('Warning: "Subtype" %s not found.' % sub_type)
+                continue
+            cur_poi_arr = poi_dict[sub_type]
+            poi_list = coord_to_grid(dataset, cur_poi_arr).repeat(w, axis=0)
+            for poi in poi_list:
+                row, col = poi
+                if row >= box_boundary[0] and \
+                   row < box_boundary[2] and \
+                   col >= box_boundary[1] and \
+                   col < box_boundary[3]:
+                    res[row, col, i] += 1
     return res
 
 

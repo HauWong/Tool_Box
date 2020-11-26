@@ -157,7 +157,7 @@
 ## 图片输出工具
 *output.py*  
 包括
-1. `extract_category(distribution, threshold=None, num=1)`
+1. `extract_category(distribution, threshold=None, num=1)`  
     提取概率排名前N个类的索引和概率值, N取决于num
 ```python
     Args:
